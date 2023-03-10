@@ -4,8 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.thedeanda.lorem.LoremIpsum;
-import lombok.Getter;
-import lombok.Setter;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedWriter;
@@ -18,32 +17,14 @@ import java.util.List;
 import java.util.Random;
 
 public class File {
-    @Getter
-    @Setter
-    static class Element {
-        private long id;
-        private String name;
-        private String model;
-        private String description;
-        private String img_url;
-        private double price;
-
-        public Element() {
-
-        }
-
-        public Element(long id, String name, String model, String description, String img_url, double price) {
-            this.id = id;
-            this.name = name;
-            this.model = model;
-            this.description = description;
-            this.img_url = img_url;
-            this.price = price;
-        }
-
-
-    }
-
+    /**
+     * Converts an object to a JSON formatted string using the Gson library.
+     *
+     * @param object the object to convert to JSON format
+     * @return the JSON formatted string representation of the object
+     * @throws NullPointerException if the input object is null
+     * @author https://github.com/drewdev02
+     */
     public static @NotNull String toJson(@NotNull Object object) {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonObject jsonObject = new JsonObject();
@@ -58,38 +39,123 @@ public class File {
         return gson.toJson(jsonObject);
     }
 
-
-    public static @NotNull Element randowElement() {
+    /**
+     * Generates a random instance of a class using reflection and assigns random values to its fields.
+     *
+     * @param clazz the class of the object to be instantiated
+     * @return a new instance of the given class with randomized field values
+     * @throws IllegalAccessException if the class or its nullary constructor is not accessible
+     * @throws InstantiationException if the class is an interface, an array class, an abstract class, or lacks a nullary constructor
+     * @author https://github.com/drewdev02
+     */
+    public static <T> @NotNull T randomElement(@NotNull Class<T> clazz) throws IllegalAccessException, InstantiationException {
         var lorem = LoremIpsum.getInstance();
         var random = new Random();
 
-        var id = random.nextLong() % 1000;
-        var name = lorem.getName();
-        var model = lorem.getName();
-        var description = lorem.getWords(100);
-        var url = lorem.getUrl();
-        var price = (random.nextDouble() % 1000) * 100;
-
-
-        return new Element(id, name, model, description, url, price);
+        var obj = clazz.newInstance();
+        var fields = clazz.getDeclaredFields();
+        for (var field : fields) {
+            field.setAccessible(true);
+            var type = field.getType();
+            if (type.equals(int.class) || type.equals(Integer.class)) {
+                field.set(obj, random.nextInt(1000));
+            } else if (type.equals(long.class) || type.equals(Long.class)) {
+                field.set(obj, random.nextLong() % 1000);
+            } else if (type.equals(double.class) || type.equals(Double.class)) {
+                field.set(obj, (random.nextDouble() % 1000) * 100);
+            } else if (type.equals(String.class)) {
+                var fieldName = field.getName();
+                if (fieldName.equalsIgnoreCase("name") || fieldName.equalsIgnoreCase("model")) {
+                    field.set(obj, lorem.getName());
+                } else if (fieldName.equalsIgnoreCase("description")) {
+                    field.set(obj, lorem.getWords(100));
+                } else if (fieldName.equalsIgnoreCase("img_url")) {
+                    field.set(obj, lorem.getUrl());
+                } else {
+                    field.set(obj, lorem.getWords(1));
+                }
+            } else {
+                // handle other types as needed
+            }
+        }
+        return obj;
     }
 
-    public static void createElement(List<Element> elements, int limitCant) {
+    /**
+     * Generates a random element for an object, modifying its fields with random values based on their data type.
+     *
+     * @param object the object to modify with random values.
+     * @return the modified object with random values.
+     * @throws IllegalAccessException if the access to the object's fields is not allowed.
+     * @author https://github.com/drewdev02
+     */
+    @Contract("_ -> param1")
+    public static @NotNull Object randomElement(@NotNull Object object) throws IllegalAccessException {
+        var lorem = LoremIpsum.getInstance();
+        var random = new Random();
+
+        var fields = object.getClass().getDeclaredFields();
+        for (var field : fields) {
+            field.setAccessible(true);
+            var type = field.getType();
+            if (type.equals(int.class) || type.equals(Integer.class)) {
+                field.set(object, random.nextInt(1000));
+            } else if (type.equals(long.class) || type.equals(Long.class)) {
+                field.set(object, random.nextLong() % 1000);
+            } else if (type.equals(double.class) || type.equals(Double.class)) {
+                field.set(object, (random.nextDouble() % 1000) * 100);
+            } else if (type.equals(String.class)) {
+                var fieldName = field.getName();
+                if (fieldName.equalsIgnoreCase("name") || fieldName.equalsIgnoreCase("model")) {
+                    field.set(object, lorem.getName());
+                } else if (fieldName.equalsIgnoreCase("description")) {
+                    field.set(object, lorem.getWords(100));
+                } else if (fieldName.equalsIgnoreCase("img_url")) {
+                    field.set(object, lorem.getUrl());
+                } else {
+                    field.set(object, lorem.getWords(1));
+                }
+            } else {
+                // handle other types as needed
+            }
+        }
+        return object;
+    }
+
+    /**
+     * Generates a specified number of random objects of the given class and adds them to a list.
+     *
+     * @param objects   The list to which the generated objects will be added.
+     * @param limitCant The number of objects to generate.
+     * @param clazz     The class of the objects to be generated.
+     * @throws IllegalAccessException If the class or its nullary constructor is not accessible.
+     * @throws InstantiationException If an object cannot be instantiated due to an error in the creation process.
+     * @author https://github.com/drewdev02
+     */
+    public static void createElement(List<Object> objects, int limitCant, Class<?> clazz) throws IllegalAccessException, InstantiationException {
         for (var i = 0; i < limitCant; i++) {
-            elements.add(randowElement());
+            objects.add(randomElement(clazz));
         }
     }
 
-    public static void CreateFile(@NotNull String name, @NotNull List<Element> elements
+    /**
+     * Creates a text file with the given name and writes the JSON representation of the objects in the given list.
+     * Each object is written in a new line, separated by commas except for the last one.
+     *
+     * @param name    the name of the file to create (without the ".txt" extension)
+     * @param objects the list of objects to write in the file
+     * @author https://github.com/drewdev02
+     */
+    public static void createFile(@NotNull String name, @NotNull List<Object> objects
 
     ) {
         try {
             var fw = new FileWriter(name.concat(".txt"), false);
             var bw = new BufferedWriter(fw);
             var file = new PrintWriter(bw);
-            var i = elements.size() - 1;
-            for (var element : elements) {
-                if (elements.indexOf(element) == i) {
+            var i = objects.size() - 1;
+            for (var element : objects) {
+                if (objects.indexOf(element) == i) {
                     file.println(File.toJson(element));
                 } else {
                     file.println(File.toJson(element) + ",");
@@ -102,11 +168,16 @@ public class File {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IllegalAccessException, InstantiationException {
         var name = "elements";
         var elements = new ArrayList();
-        createElement(elements, 2);
-        File.CreateFile(name, elements);
+        createElement(elements, 7, Element.class);
+        File.createFile(name, elements);
+
+        var name1 = "persons";
+        var persons = new ArrayList();
+        createElement(persons, 7, Persona.class);
+        File.createFile(name1, persons);
 
 
     }
