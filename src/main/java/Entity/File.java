@@ -15,7 +15,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.IntStream;
+
+import static java.util.stream.IntStream.range;
 
 public class File {
     /**
@@ -144,11 +145,18 @@ public class File {
      * @throws InstantiationException If an object cannot be instantiated due to an error in the creation process.
      * @author https://github.com/drewdev02
      */
-    public static void createElement(List<Object> objects, int limitCant, Class<?> clazz) throws IllegalAccessException, InstantiationException {
-        for (var i = 0; i < limitCant; i++) {
-            objects.add(randomElement(clazz));
-        }
+    public static void createElement(@NotNull List<Object> objects, int limitCant, Class<?> clazz) throws IllegalAccessException, InstantiationException {
+        range(0, limitCant)
+                .mapToObj(i -> {
+                    try {
+                        return randomElement(clazz);
+                    } catch (IllegalAccessException | InstantiationException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .forEach(objects::add);
     }
+
 
     /**
      * Creates a text file with the given name and writes the JSON representation of the objects in the given list.
@@ -163,7 +171,7 @@ public class File {
              var bw = new BufferedWriter(fw);
              var file = new PrintWriter(bw)) {
 
-            IntStream.range(0, objects.size())
+            range(0, objects.size())
                     .mapToObj(i -> {
                         try {
                             return File.toJson(objects.get(i)) + (i == objects.size() - 1 ? "" : ",");
