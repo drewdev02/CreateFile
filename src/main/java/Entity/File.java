@@ -11,10 +11,11 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.IntStream;
 
 public class File {
     /**
@@ -28,16 +29,18 @@ public class File {
     public static @NotNull String toJson(@NotNull Object object) {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonObject jsonObject = new JsonObject();
-        for (Field field : object.getClass().getDeclaredFields()) {
-            try {
-                field.setAccessible(true);
-                jsonObject.add(field.getName(), gson.toJsonTree(field.get(object)));
-            } catch (IllegalAccessException err) {
-                System.out.println(err);
-            }
-        }
+        Arrays.stream(object.getClass().getDeclaredFields())
+                .peek(field -> field.setAccessible(true))
+                .forEach(field -> {
+                    try {
+                        jsonObject.add(field.getName(), gson.toJsonTree(field.get(object)));
+                    } catch (IllegalAccessException err) {
+                        System.out.println(err);
+                    }
+                });
         return gson.toJson(jsonObject);
     }
+
 
     /**
      * Generates a random instance of a class using reflection and assigns random values to its fields.
@@ -54,30 +57,35 @@ public class File {
 
         var obj = clazz.newInstance();
         var fields = clazz.getDeclaredFields();
-        for (var field : fields) {
-            field.setAccessible(true);
-            var type = field.getType();
-            if (type.equals(int.class) || type.equals(Integer.class)) {
-                field.set(obj, random.nextInt(1000));
-            } else if (type.equals(long.class) || type.equals(Long.class)) {
-                field.set(obj, random.nextLong() % 1000);
-            } else if (type.equals(double.class) || type.equals(Double.class)) {
-                field.set(obj, (random.nextDouble() % 1000) * 100);
-            } else if (type.equals(String.class)) {
-                var fieldName = field.getName();
-                if (fieldName.equalsIgnoreCase("name") || fieldName.equalsIgnoreCase("model")) {
-                    field.set(obj, lorem.getName());
-                } else if (fieldName.equalsIgnoreCase("description")) {
-                    field.set(obj, lorem.getWords(100));
-                } else if (fieldName.equalsIgnoreCase("img_url")) {
-                    field.set(obj, lorem.getUrl());
-                } else {
-                    field.set(obj, lorem.getWords(1));
-                }
-            } else {
-                // handle other types as needed
-            }
-        }
+        Arrays.stream(fields)
+                .peek(field -> field.setAccessible(true))
+                .forEach(field -> {
+                    var type = field.getType();
+                    try {
+                        if (type.equals(int.class) || type.equals(Integer.class)) {
+                            field.setInt(obj, random.nextInt(1000));
+                        } else if (type.equals(long.class) || type.equals(Long.class)) {
+                            field.setLong(obj, random.nextLong() % 1000);
+                        } else if (type.equals(double.class) || type.equals(Double.class)) {
+                            field.setDouble(obj, (random.nextDouble() % 1000) * 100);
+                        } else if (type.equals(String.class)) {
+                            var fieldName = field.getName();
+                            if (fieldName.equalsIgnoreCase("name") || fieldName.equalsIgnoreCase("model")) {
+                                field.set(obj, lorem.getName());
+                            } else if (fieldName.equalsIgnoreCase("description")) {
+                                field.set(obj, lorem.getWords(100));
+                            } else if (fieldName.equalsIgnoreCase("img_url")) {
+                                field.set(obj, lorem.getUrl());
+                            } else {
+                                field.set(obj, lorem.getWords(1));
+                            }
+                        } else {
+                            // handle other types as needed
+                        }
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                });
         return obj;
     }
 
@@ -94,38 +102,42 @@ public class File {
         var lorem = LoremIpsum.getInstance();
         var random = new Random();
 
-        var fields = object.getClass().getDeclaredFields();
-        for (var field : fields) {
-            field.setAccessible(true);
-            var type = field.getType();
-            if (type.equals(int.class) || type.equals(Integer.class)) {
-                field.set(object, random.nextInt(1000));
-            } else if (type.equals(long.class) || type.equals(Long.class)) {
-                field.set(object, random.nextLong() % 1000);
-            } else if (type.equals(double.class) || type.equals(Double.class)) {
-                field.set(object, (random.nextDouble() % 1000) * 100);
-            } else if (type.equals(String.class)) {
-                var fieldName = field.getName();
-                if (fieldName.equalsIgnoreCase("name") || fieldName.equalsIgnoreCase("model")) {
-                    field.set(object, lorem.getName());
-                } else if (fieldName.equalsIgnoreCase("description")) {
-                    field.set(object, lorem.getWords(100));
-                } else if (fieldName.equalsIgnoreCase("img_url")) {
-                    field.set(object, lorem.getUrl());
-                } else {
-                    field.set(object, lorem.getWords(1));
-                }
-            } else {
-                // handle other types as needed
-            }
-        }
+        Arrays.stream(object.getClass().getDeclaredFields())
+                .peek(field -> field.setAccessible(true))
+                .forEach(field -> {
+                    try {
+                        var type = field.getType();
+                        if (type.equals(int.class) || type.equals(Integer.class)) {
+                            field.set(object, random.nextInt(1000));
+                        } else if (type.equals(long.class) || type.equals(Long.class)) {
+                            field.set(object, random.nextLong() % 1000);
+                        } else if (type.equals(double.class) || type.equals(Double.class)) {
+                            field.set(object, (random.nextDouble() % 1000) * 100);
+                        } else if (type.equals(String.class)) {
+                            var fieldName = field.getName();
+                            if (fieldName.equalsIgnoreCase("name") || fieldName.equalsIgnoreCase("model")) {
+                                field.set(object, lorem.getName());
+                            } else if (fieldName.equalsIgnoreCase("description")) {
+                                field.set(object, lorem.getWords(100));
+                            } else if (fieldName.equalsIgnoreCase("img_url")) {
+                                field.set(object, lorem.getUrl());
+                            } else {
+                                field.set(object, lorem.getWords(1));
+                            }
+                        } else {
+                            // handle other types as needed
+                        }
+                    } catch (IllegalAccessException err) {
+                        System.out.println(err);
+                    }
+                });
         return object;
     }
+
 
     /**
      * Generates a specified number of random objects of the given class and adds them to a list.
      *
-     * @param objects   The list to which the generated objects will be added.
      * @param limitCant The number of objects to generate.
      * @param clazz     The class of the objects to be generated.
      * @throws IllegalAccessException If the class or its nullary constructor is not accessible.
@@ -146,27 +158,26 @@ public class File {
      * @param objects the list of objects to write in the file
      * @author https://github.com/drewdev02
      */
-    public static void createFile(@NotNull String name, @NotNull List<Object> objects
+    public static void createFile(@NotNull String name, @NotNull List<Object> objects) {
+        try (var fw = new FileWriter(name.concat(".txt"), false);
+             var bw = new BufferedWriter(fw);
+             var file = new PrintWriter(bw)) {
 
-    ) {
-        try {
-            var fw = new FileWriter(name.concat(".txt"), false);
-            var bw = new BufferedWriter(fw);
-            var file = new PrintWriter(bw);
-            var i = objects.size() - 1;
-            for (var element : objects) {
-                if (objects.indexOf(element) == i) {
-                    file.println(File.toJson(element));
-                } else {
-                    file.println(File.toJson(element) + ",");
-                }
+            IntStream.range(0, objects.size())
+                    .mapToObj(i -> {
+                        try {
+                            return File.toJson(objects.get(i)) + (i == objects.size() - 1 ? "" : ",");
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .forEach(file::println);
 
-            }
-            file.close();
-        } catch (IOException err) {
-            System.out.println(err);
+        } catch (IOException e) {
+            System.out.println(e);
         }
     }
+
 
     public static void main(String[] args) throws IllegalAccessException, InstantiationException {
         var name = "elements";
